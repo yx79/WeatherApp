@@ -18,11 +18,11 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
-   
     
 }
 
-- (void)viewWillDisappear:(BOOL)animated {
+// update unit when unit segment tapped
+- (IBAction)unitSegmentTapped:(id)sender {
     NSString *unitStr;
     if (self.unitSegment.selectedSegmentIndex == 1) {
         unitStr = @"C"; // unit ºF
@@ -33,10 +33,8 @@
     NSDictionary *dic = @{ @"unit": unitStr,};
     NSLog(@"%@", dic);
     [[NSNotificationCenter defaultCenter]postNotificationName:@"UnitNotification" object:self userInfo:dic];
-    
-    
-
 }
+
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.

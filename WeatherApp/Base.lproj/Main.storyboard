@@ -196,7 +196,7 @@
                                         <rect key="frame" x="0.0" y="28" width="375" height="57"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="DOr-G2-OH9" id="dNh-Mn-iOc">
-                                            <frame key="frameInset" width="375" height="56.5"/>
+                                            <frame key="frameInset" width="375" height="56"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <label opaque="NO" userInteractionEnabled="NO" tag="200" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Tuesday" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="471-4q-NYZ">
@@ -319,6 +319,9 @@
                                     <segment title="Celcius"/>
                                 </segments>
                                 <color key="tintColor" red="0.15686274510000001" green="0.70980392160000005" blue="0.98823529409999999" alpha="1" colorSpace="calibratedRGB"/>
+                                <connections>
+                                    <action selector="unitSegmentTapped:" destination="RVI-aD-dnP" eventType="valueChanged" id="MZW-sI-VIG"/>
+                                </connections>
                             </segmentedControl>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text=" Common license." textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ZfH-J2-hHw">
                                 <constraints>
