@@ -32,21 +32,16 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.locationLabel.text = @"Loading...";
-
-    // fetch data with Grand Central Dispatch
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-        
-        dispatch_async(dispatch_get_main_queue(), ^{
-            // Set up the location Manager
-            [self setupLocationManager];
-        });
-    });
+    
+    [self setupLocationManager];
     
     [[NSNotificationCenter defaultCenter]
      addObserver:self selector:@selector(receiveNotification:) name:@"UnitNotification" object:nil];
     
+    
     //remove the separator line in a UITableView
     self.dailyTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    self.dailyTableView.allowsSelection = NO;
 }
 
 - (void)setupLocationManager {
@@ -387,7 +382,6 @@
             dispatch_async(dispatch_get_main_queue(), ^{
                 
                 [self fetchTodayForecastJSONfromInternet];
-                
                 [self.dailyTableView reloadData];
                 [self.hourlyColloectionView reloadData];
             });
