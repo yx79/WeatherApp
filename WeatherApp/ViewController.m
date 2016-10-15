@@ -7,7 +7,7 @@
 //
 
 #import "ViewController.h"
-#define API_KEY_ID @"Your own API key ID here";
+#define API_KEY_ID @"Your-API-KEY_ID";
 
 @interface ViewController ()
 
@@ -33,11 +33,13 @@
     [super viewDidLoad];
     self.locationLabel.text = @"Loading...";
     
+    
+    
     [self setupLocationManager];
+    
     
     [[NSNotificationCenter defaultCenter]
      addObserver:self selector:@selector(receiveNotification:) name:@"UnitNotification" object:nil];
-    
     
     //remove the separator line in a UITableView
     self.dailyTableView.separatorStyle = UITableViewCellSeparatorStyleNone;
@@ -71,12 +73,15 @@
         NSLog(@"%@", self.longitudeStr);
         NSString *apiKeyStr = API_KEY_ID;
         NSString *urlRequestTemple = @"http://api.wunderground.com/api/%@/%@/q/%@,%@.json";
+        
+        
         [self fetchCurrentJSONfromInternet: [NSString stringWithFormat:urlRequestTemple, apiKeyStr, @"conditions", self.latitudeStr, self.longitudeStr]];
         [self fetchHourlyForecastJSONfromInternet: [NSString stringWithFormat:urlRequestTemple, apiKeyStr, @"hourly", self.latitudeStr, self.longitudeStr]];
         [self fetchTenDayJSONfromInternet: [NSString stringWithFormat:urlRequestTemple, apiKeyStr, @"forecast10day", self.latitudeStr, self.longitudeStr]];
-        [self fetchTodayForecastJSONfromInternet];
-        [self.dailyTableView reloadData];
-        [self.hourlyColloectionView reloadData];
+        
+        
+        
+        
     } else {
         [self zipcodeAlertView];
     }
@@ -94,42 +99,51 @@
 - (void)fetchCurrentJSONfromInternet: (NSString *)urlStr {
     // Url fetch data
     NSURL *url = [NSURL URLWithString:urlStr];
+    
+    
     NSLog(@"\nURL: %@", urlStr);
-    NSData *currentData = [NSData dataWithContentsOfURL:url options:kNilOptions error:nil];
     
-    /*
-    // using local json file to test
-    NSString *filePath = [[NSBundle mainBundle] pathForResource:@"current" ofType:@"json"];
-    //NSLog(@"%@", filePath);
-    NSData *currentData = [NSData dataWithContentsOfFile: filePath];
-     */
+    // fetch data with Grand Central Dispatch
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        NSData *currentData = [NSData dataWithContentsOfURL:url options:kNilOptions error:nil];
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            NSDictionary *mainDic = [NSJSONSerialization JSONObjectWithData:currentData options:NSJSONReadingAllowFragments error:nil];
+            NSDictionary *currentDic = [mainDic objectForKey:@"current_observation"];
+            NSDictionary *responseDic = [mainDic objectForKey:@"response"];
+            if([responseDic objectForKey:@"error"]) {
+                [self errorAlertView];
+                return;
+            }
+            
+            // lookup the Weather type in JSON file
+            NSString *currentWeatherStr = [currentDic objectForKey:@"weather"];
+            self.currentWeatherLabel.text = currentWeatherStr;
+            //NSLog(@"%@", currentWeatherStr);
+            
+            // lookup the location temp in JSON file
+            NSDictionary *locationDic = [currentDic objectForKey:@"display_location"];
+            NSString *cityStr = [locationDic objectForKey:@"city"];
+            self.locationLabel.text = cityStr;
+            NSLog(@"\ncity: %@", cityStr);
+            
+            // lookup the temp in JSON file
+            NSNumber *currentTemNum = [currentDic objectForKey:@"temp_f"];
+            int tem = [currentTemNum intValue];
+            NSString *currentTemStr = [NSString stringWithFormat:@"%d", tem];
+            self.currentTemLabel.text = currentTemStr;
+            NSLog(@"Temperature: %@", currentTemStr);
+            
+            // lookup the icon and choose the Weather icon in UIImageView
+            NSString *weatherIcon = [currentDic objectForKey:@"icon"];
+            NSString *largeIcon = [NSString stringWithFormat:@"%@L",weatherIcon];
+            self.currentIcon.image = [UIImage imageNamed:largeIcon];
+            //NSLog(@"%@", weatherIcon);
+        });
+    });
     
-    NSDictionary *mainDic = [NSJSONSerialization JSONObjectWithData:currentData options:NSJSONReadingAllowFragments error:nil];
-    NSDictionary *currentDic = [mainDic objectForKey:@"current_observation"];
     
-    // lookup the Weather type in JSON file
-    NSString *currentWeatherStr = [currentDic objectForKey:@"weather"];
-    self.currentWeatherLabel.text = currentWeatherStr;
-    //NSLog(@"%@", currentWeatherStr);
-    
-    // lookup the location temp in JSON file
-    NSDictionary *locationDic = [currentDic objectForKey:@"display_location"];
-    NSString *cityStr = [locationDic objectForKey:@"city"];
-    self.locationLabel.text = cityStr;
-    NSLog(@"%@", cityStr);
-    
-    // lookup the temp in JSON file
-    NSNumber *currentTemNum = [currentDic objectForKey:@"temp_f"];
-    int tem = [currentTemNum intValue];
-    NSString *currentTemStr = [NSString stringWithFormat:@"%d", tem];
-    self.currentTemLabel.text = currentTemStr;
-    //NSLog(@"%@", currentTemStr);
-    
-    // lookup the icon and choose the Weather icon in UIImageView
-    NSString *weatherIcon = [currentDic objectForKey:@"icon"];
-    NSString *largeIcon = [NSString stringWithFormat:@"%@L",weatherIcon];
-    self.currentIcon.image = [UIImage imageNamed:largeIcon];
-    //NSLog(@"%@", weatherIcon);
 }
 
 
@@ -139,42 +153,55 @@
     
     // Url fetch data
     /*
-    // read local data for development without too many APIs request
-    NSString *filePath = [[NSBundle mainBundle] pathForResource:@"hourlyData" ofType:@"json"];
-    NSLog(@"%@", filePath);
-    NSData *hourlyNSData = [NSData dataWithContentsOfFile: filePath];
-    */
+     // read local data for development without too many APIs request
+     NSString *filePath = [[NSBundle mainBundle] pathForResource:@"hourlyData" ofType:@"json"];
+     NSLog(@"%@", filePath);
+     NSData *hourlyNSData = [NSData dataWithContentsOfFile: filePath];
+     */
     
     NSURL *url = [NSURL URLWithString:urlStr];
-    //NSLog(@"\nURL: %@", urlStr);
-    NSData *hourlyNSData = [NSData dataWithContentsOfURL:url options:kNilOptions error:nil];
     
-    NSDictionary *hourlyDic = [NSJSONSerialization JSONObjectWithData:hourlyNSData options:NSJSONReadingAllowFragments error:nil];
-
-    self.hourlyArray = [hourlyDic objectForKey:@"hourly_forecast"];
-    //NSLog(@"%@", hourlyDic);
-    //NSLog(@"All data: %lu", (unsigned long)[self.hourlyArray count]);
+    // Grand Central Dispatch
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        NSData *hourlyNSData = [NSData dataWithContentsOfURL:url options:kNilOptions error:nil];
+        NSDictionary *hourlyDic = [NSJSONSerialization JSONObjectWithData:hourlyNSData options:NSJSONReadingAllowFragments error:nil];
+        NSDictionary *responseDic = [hourlyDic objectForKey:@"response"];
+        if([responseDic objectForKey:@"error"]) {
+            return;
+        }
+        self.hourlyArray = [hourlyDic objectForKey:@"hourly_forecast"];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.hourlyColloectionView reloadData];
+        });
+    });
 }
 
-// days forecast (bottom tableView)
-- (void)fetchTenDayJSONfromInternet: (NSString *)urlStr  {
-    /*
-    // read local data for development without too many APIs request
-    NSString *filePath = [[NSBundle mainBundle] pathForResource:@"tenDayData" ofType:@"json"];
-    NSLog(@"%@", filePath);
-    NSData *tenDay = [NSData dataWithContentsOfFile: filePath];
-    */
 
+// daily forecast (bottom tableView) 9 days
+- (void)fetchTenDayJSONfromInternet: (NSString *)urlStr  {
     // Url fetch data
     NSURL *url = [NSURL URLWithString:urlStr];
-    NSLog(@"\nURL: %@", urlStr);
-    NSData *tenDay = [NSData dataWithContentsOfURL:url options:kNilOptions error:nil];
-    NSDictionary *mainDic = [NSJSONSerialization JSONObjectWithData:tenDay options:NSJSONReadingAllowFragments error:nil];
-    NSDictionary *forecastDic = [mainDic objectForKey:@"forecast"];
-    NSDictionary *simpleForecastDic = [forecastDic objectForKey:@"simpleforecast"];
-
-    self.forecastArray = [simpleForecastDic objectForKey:@"forecastday"];
-    //NSLog(@"All data: %lu", (unsigned long)[self.forecastArray count]);
+    //NSLog(@"\nURL: %@", urlStr);
+    
+    
+    // Grand Central Dispatch
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        NSData *tenDay = [NSData dataWithContentsOfURL:url options:kNilOptions error:nil];
+        NSDictionary *mainDic = [NSJSONSerialization JSONObjectWithData:tenDay options:NSJSONReadingAllowFragments error:nil];
+        
+        NSDictionary *responseDic = [mainDic objectForKey:@"response"];
+        if([responseDic objectForKey:@"error"]) {
+            return;
+        }
+        NSDictionary *forecastDic = [mainDic objectForKey:@"forecast"];
+        NSDictionary *simpleForecastDic = [forecastDic objectForKey:@"simpleforecast"];
+        self.forecastArray = [simpleForecastDic objectForKey:@"forecastday"];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            // show today forecast data
+            [self fetchTodayForecastJSONfromInternet];
+            [self.dailyTableView reloadData];
+        });
+    });
 }
 
 
@@ -243,7 +270,7 @@
     long index = indexPath.row + 1;
     // Display the weather info on the table view cell
     NSDictionary *weatherDic = [self.forecastArray objectAtIndex:index];
-
+    
     
     // lookup the weekday in JSON file, and show in UILabel with tag number
     NSDictionary *weatherDate = [weatherDic objectForKey:@"date"];
@@ -262,7 +289,7 @@
     }
     self.dailyHigh = (UILabel *)[cell viewWithTag:202];
     self.dailyHigh.text = high;
-
+    
     // lookup the low temp in JSON file, and show in UILabel with tag number
     NSDictionary *weatherLow = [weatherDic objectForKey:@"low"];
     NSString *low = [weatherLow objectForKey:@"fahrenheit"];
@@ -273,7 +300,7 @@
     }
     self.dailyLow = (UILabel *)[cell viewWithTag:203];
     self.dailyLow.text = low;
-
+    
     // lookup the icon and choose the Weather icon in UIImageView
     NSString *weatherIcon = [weatherDic objectForKey:@"icon"];
     UIImageView *dailyWeather = (UIImageView *)[cell viewWithTag:201];
@@ -301,7 +328,7 @@
 -(UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
     static NSString *CollectionViewCellIdentifier = @"hourlyCell";
-
+    
     HourlyCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:CollectionViewCellIdentifier forIndexPath:indexPath];
     // Display the weather info on the table view cell
     
@@ -354,16 +381,16 @@
 }
 
 - (void)errorAlertView {
-    UIAlertController *wrongZipcodeAC = [UIAlertController alertControllerWithTitle:@"Error" message:@"Please enter correct 5 digit postal code below:" preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertController *wrongZipcodeAC = [UIAlertController alertControllerWithTitle:@"Error" message:@"Please enter correct 5 digit postal code." preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction *tryAction = [UIAlertAction actionWithTitle:@"Try again" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         [self zipcodeAlertView];
     }];
     UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
+        //                self.currentTemLabel.text = @"-";
     }];
     [wrongZipcodeAC addAction:cancelAction];
     [wrongZipcodeAC addAction:tryAction];
     [self presentViewController:wrongZipcodeAC animated:YES completion:nil];
-
 }
 
 - (void)zipcodeAlertView {
@@ -371,22 +398,19 @@
     UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         self.zipcode = ((UITextField *)[editAC.textFields objectAtIndex:0]).text;
         NSLog(@"%@", self.zipcode);
+        
         if([self.zipcode length] != 5 || self.zipcode == nil) {
             [self errorAlertView];
-        }
-        // Update
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+            
+        } else {
             [self fetchCurrentJSONfromInternet: [NSString stringWithFormat:@"http://api.wunderground.com/api/7dfb3c43f027b627/conditions/q/%@.json", self.zipcode]];
             [self fetchHourlyForecastJSONfromInternet: [NSString stringWithFormat:@"http://api.wunderground.com/api/7dfb3c43f027b627/hourly/q/%@.json", self.zipcode]];
             [self fetchTenDayJSONfromInternet: [NSString stringWithFormat:@"http://api.wunderground.com/api/7dfb3c43f027b627/forecast10day/q/%@.json", self.zipcode]];
-            dispatch_async(dispatch_get_main_queue(), ^{
-                
-                [self fetchTodayForecastJSONfromInternet];
-                [self.dailyTableView reloadData];
-                [self.hourlyColloectionView reloadData];
-            });
-        });
+        }
+        
+        
     }];
+    
     [editAC addTextFieldWithConfigurationHandler:^(UITextField *textField) {
         textField.placeholder = @"e.g. 10010";
         textField.textColor = [UIColor grayColor];
@@ -411,7 +435,7 @@
         UIPopoverPresentationController *ppc = settingVC.popoverPresentationController;
         if (ppc) {
             if ([sender isKindOfClass:[UIButton class]]) {
-                //  the popover is being triggered by setting UIButton 
+                //  the popover is being triggered by setting UIButton
                 ppc.sourceView = (UIButton *)sender;
                 ppc.sourceRect = [(UIButton *)sender bounds];
             }

@@ -209,7 +209,7 @@
                                                     <color key="textColor" red="0.99215686274509807" green="0.45098039215686275" blue="0.81176470588235294" alpha="1" colorSpace="calibratedRGB"/>
                                                     <nil key="highlightedColor"/>
                                                 </label>
-                                                <imageView userInteractionEnabled="NO" tag="201" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="clearS" translatesAutoresizingMaskIntoConstraints="NO" id="YxR-d2-c2N">
+                                                <imageView userInteractionEnabled="NO" tag="201" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="YxR-d2-c2N">
                                                     <color key="tintColor" red="0.45098039220000002" green="0.81176470590000005" blue="0.99215686270000003" alpha="1" colorSpace="calibratedRGB"/>
                                                     <constraints>
                                                         <constraint firstAttribute="height" constant="27" id="H6H-Hy-SYy"/>
@@ -438,7 +438,6 @@
     </scenes>
     <resources>
         <image name="chanceflurries" width="25" height="25"/>
-        <image name="clearS" width="25" height="25"/>
         <image name="edit" width="22" height="22"/>
         <image name="settings" width="22" height="22"/>
     </resources>
