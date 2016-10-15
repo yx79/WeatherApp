@@ -358,35 +358,34 @@
     [self zipcodeAlertView];
 }
 
+- (void)errorAlertView {
+    UIAlertController *wrongZipcodeAC = [UIAlertController alertControllerWithTitle:@"Error" message:@"Please enter correct 5 digit postal code below:" preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *tryAction = [UIAlertAction actionWithTitle:@"Try again" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        [self zipcodeAlertView];
+    }];
+    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
+    }];
+    [wrongZipcodeAC addAction:cancelAction];
+    [wrongZipcodeAC addAction:tryAction];
+    [self presentViewController:wrongZipcodeAC animated:YES completion:nil];
+
+}
+
 - (void)zipcodeAlertView {
     UIAlertController *editAC = [UIAlertController alertControllerWithTitle:@"Edit Location" message:@"Enter your postal code below:" preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-        self.currentTemLabel.text = @"";
         self.zipcode = ((UITextField *)[editAC.textFields objectAtIndex:0]).text;
         NSLog(@"%@", self.zipcode);
         if([self.zipcode length] != 5 || self.zipcode == nil) {
-            UIAlertController *wrongZipcodeAC = [UIAlertController alertControllerWithTitle:@"Error" message:@"Please enter correct 5 digit postal code below:" preferredStyle:UIAlertControllerStyleAlert];
-            UIAlertAction *tryAction = [UIAlertAction actionWithTitle:@"Try again" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-                [self zipcodeAlertView];
-                self.todayLowLabel.text = @"";
-                self.todayHighLabel.text = @"";
-                //self.currentTemLabel.text = @"";
-            }];
-            UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
-                //self.currentTemLabel.text = @"";
-            }];
-            [wrongZipcodeAC addAction:cancelAction];
-            [wrongZipcodeAC addAction:tryAction];
-            [self presentViewController:wrongZipcodeAC animated:YES completion:nil];
-            
+            [self errorAlertView];
         }
         // Update
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-            
+            [self fetchCurrentJSONfromInternet: [NSString stringWithFormat:@"http://api.wunderground.com/api/7dfb3c43f027b627/conditions/q/%@.json", self.zipcode]];
+            [self fetchHourlyForecastJSONfromInternet: [NSString stringWithFormat:@"http://api.wunderground.com/api/7dfb3c43f027b627/hourly/q/%@.json", self.zipcode]];
+            [self fetchTenDayJSONfromInternet: [NSString stringWithFormat:@"http://api.wunderground.com/api/7dfb3c43f027b627/forecast10day/q/%@.json", self.zipcode]];
             dispatch_async(dispatch_get_main_queue(), ^{
-                [self fetchCurrentJSONfromInternet: [NSString stringWithFormat:@"http://api.wunderground.com/api/7dfb3c43f027b627/conditions/q/%@.json", self.zipcode]];
-                [self fetchHourlyForecastJSONfromInternet: [NSString stringWithFormat:@"http://api.wunderground.com/api/7dfb3c43f027b627/hourly/q/%@.json", self.zipcode]];
-                [self fetchTenDayJSONfromInternet: [NSString stringWithFormat:@"http://api.wunderground.com/api/7dfb3c43f027b627/forecast10day/q/%@.json", self.zipcode]];
+                
                 [self fetchTodayForecastJSONfromInternet];
                 
                 [self.dailyTableView reloadData];
