@@ -27,6 +27,8 @@
 @property (weak, nonatomic) UILabel *hourlyTempLabel;
 @property (weak, nonatomic) UILabel *dailyHigh;
 @property (weak, nonatomic) UILabel *dailyLow;
+@property (strong, nonatomic) UIActivityIndicatorView *spinner;
+
 
 @end
 

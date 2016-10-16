@@ -7,7 +7,7 @@
 //
 
 #import "ViewController.h"
-#define API_KEY_ID @"Your-API-KEY_ID";
+#define API_KEY_ID @"YOUR-API-KEY-ID";
 
 @interface ViewController ()
 
@@ -21,6 +21,7 @@
 @property (weak, nonatomic) IBOutlet UILabel *todayLowLabel;
 @property (weak, nonatomic) IBOutlet UILabel *todayLabel;
 @property (weak, nonatomic) IBOutlet UILabel *locationLabel;
+@property (weak, nonatomic) IBOutlet UIButton *editButton;
 
 
 
@@ -33,6 +34,16 @@
     [super viewDidLoad];
     self.locationLabel.text = @"Loading...";
     
+    
+    
+    
+    self.spinner = [[UIActivityIndicatorView alloc]initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+    //self.spinner.center = CGPointMake(self.view.frame.size.width/2, self.view.frame.size.height/2);
+    self.spinner.center = CGPointMake(self.view.frame.size.width - 30, 55);
+    self.spinner.color = [UIColor colorWithRed:40/255.0 green:181/255.0 blue:252/255.0 alpha:1.0];
+    [self.view addSubview:self.spinner];
+    [self.spinner startAnimating];
+    self.editButton.alpha = 0.0;
     
     
     [self setupLocationManager];
@@ -64,13 +75,14 @@
 
 - (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation
 {
-    NSLog(@"didUpdateToLocation: %@", newLocation);
+    
+    //NSLog(@"didUpdateToLocation: %@", newLocation);
     CLLocation *currentLocation = newLocation;
     
     if (currentLocation != nil) {
         self.longitudeStr = [NSString stringWithFormat:@"%.8f", currentLocation.coordinate.longitude];
         self.latitudeStr = [NSString stringWithFormat:@"%.8f", currentLocation.coordinate.latitude];
-        NSLog(@"%@", self.longitudeStr);
+        //NSLog(@"%@", self.longitudeStr);
         NSString *apiKeyStr = API_KEY_ID;
         NSString *urlRequestTemple = @"http://api.wunderground.com/api/%@/%@/q/%@,%@.json";
         
@@ -78,9 +90,6 @@
         [self fetchCurrentJSONfromInternet: [NSString stringWithFormat:urlRequestTemple, apiKeyStr, @"conditions", self.latitudeStr, self.longitudeStr]];
         [self fetchHourlyForecastJSONfromInternet: [NSString stringWithFormat:urlRequestTemple, apiKeyStr, @"hourly", self.latitudeStr, self.longitudeStr]];
         [self fetchTenDayJSONfromInternet: [NSString stringWithFormat:urlRequestTemple, apiKeyStr, @"forecast10day", self.latitudeStr, self.longitudeStr]];
-        
-        
-        
         
     } else {
         [self zipcodeAlertView];
@@ -101,14 +110,13 @@
     NSURL *url = [NSURL URLWithString:urlStr];
     
     
-    NSLog(@"\nURL: %@", urlStr);
+    //NSLog(@"\nURL: %@", urlStr);
     
     // fetch data with Grand Central Dispatch
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         NSData *currentData = [NSData dataWithContentsOfURL:url options:kNilOptions error:nil];
         
         dispatch_async(dispatch_get_main_queue(), ^{
-            
             NSDictionary *mainDic = [NSJSONSerialization JSONObjectWithData:currentData options:NSJSONReadingAllowFragments error:nil];
             NSDictionary *currentDic = [mainDic objectForKey:@"current_observation"];
             NSDictionary *responseDic = [mainDic objectForKey:@"response"];
@@ -126,14 +134,14 @@
             NSDictionary *locationDic = [currentDic objectForKey:@"display_location"];
             NSString *cityStr = [locationDic objectForKey:@"city"];
             self.locationLabel.text = cityStr;
-            NSLog(@"\ncity: %@", cityStr);
+            //NSLog(@"\ncity: %@", cityStr);
             
             // lookup the temp in JSON file
             NSNumber *currentTemNum = [currentDic objectForKey:@"temp_f"];
             int tem = [currentTemNum intValue];
             NSString *currentTemStr = [NSString stringWithFormat:@"%d", tem];
             self.currentTemLabel.text = currentTemStr;
-            NSLog(@"Temperature: %@", currentTemStr);
+            //NSLog(@"Temperature: %@", currentTemStr);
             
             // lookup the icon and choose the Weather icon in UIImageView
             NSString *weatherIcon = [currentDic objectForKey:@"icon"];
@@ -162,7 +170,7 @@
     NSURL *url = [NSURL URLWithString:urlStr];
     
     // Grand Central Dispatch
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
         NSData *hourlyNSData = [NSData dataWithContentsOfURL:url options:kNilOptions error:nil];
         NSDictionary *hourlyDic = [NSJSONSerialization JSONObjectWithData:hourlyNSData options:NSJSONReadingAllowFragments error:nil];
         NSDictionary *responseDic = [hourlyDic objectForKey:@"response"];
@@ -172,6 +180,9 @@
         self.hourlyArray = [hourlyDic objectForKey:@"hourly_forecast"];
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.hourlyColloectionView reloadData];
+            [self.spinner stopAnimating];
+            self.editButton.alpha = 1.0;
+            
         });
     });
 }
@@ -381,12 +392,14 @@
 }
 
 - (void)errorAlertView {
+    [self.spinner stopAnimating];
+    self.editButton.alpha = 1.0;
+    
     UIAlertController *wrongZipcodeAC = [UIAlertController alertControllerWithTitle:@"Error" message:@"Please enter correct 5 digit postal code." preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction *tryAction = [UIAlertAction actionWithTitle:@"Try again" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         [self zipcodeAlertView];
     }];
     UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
-        //                self.currentTemLabel.text = @"-";
     }];
     [wrongZipcodeAC addAction:cancelAction];
     [wrongZipcodeAC addAction:tryAction];
@@ -394,15 +407,19 @@
 }
 
 - (void)zipcodeAlertView {
+    
     UIAlertController *editAC = [UIAlertController alertControllerWithTitle:@"Edit Location" message:@"Enter your postal code below:" preferredStyle:UIAlertControllerStyleAlert];
     UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
         self.zipcode = ((UITextField *)[editAC.textFields objectAtIndex:0]).text;
-        NSLog(@"%@", self.zipcode);
+        //NSLog(@"%@", self.zipcode);
         
         if([self.zipcode length] != 5 || self.zipcode == nil) {
             [self errorAlertView];
             
         } else {
+            [self.spinner startAnimating];
+            self.editButton.alpha = 0.0;
+            
             [self fetchCurrentJSONfromInternet: [NSString stringWithFormat:@"http://api.wunderground.com/api/7dfb3c43f027b627/conditions/q/%@.json", self.zipcode]];
             [self fetchHourlyForecastJSONfromInternet: [NSString stringWithFormat:@"http://api.wunderground.com/api/7dfb3c43f027b627/hourly/q/%@.json", self.zipcode]];
             [self fetchTenDayJSONfromInternet: [NSString stringWithFormat:@"http://api.wunderground.com/api/7dfb3c43f027b627/forecast10day/q/%@.json", self.zipcode]];
