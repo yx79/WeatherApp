@@ -479,6 +479,12 @@
         [self.dailyTableView reloadData];
         [self.hourlyColloectionView reloadData];
         [self fetchTodayForecastJSONfromInternet];
+        // update current temperature
+        NSString *currentTemF = self.currentTemLabel.text;
+        int temF = [currentTemF intValue];
+        int temC = (temF - 32) * 5 / 9;
+        NSString *currentTemC = [NSString stringWithFormat:@"%d", temC];
+        self.currentTemLabel.text = currentTemC;
     }
 }
 
